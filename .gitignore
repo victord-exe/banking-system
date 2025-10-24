@@ -4,6 +4,9 @@
 .env.local
 .env.*.local
 
+# IMPORTANT: .env.docker is NOT ignored - it contains default values for evaluators
+# !.env.docker (already tracked)
+
 # Go
 *.exe
 *.exe~

@@ -1,0 +1,140 @@
+version: '3.8'
+
+# ==============================================================================
+# HLABS Banking System - Docker Compose Configuration
+# ==============================================================================
+# Quick Start: docker-compose up
+# This will start the entire banking system with all required services.
+# ==============================================================================
+
+services:
+  # ----------------------------------------------------------------------------
+  # PostgreSQL - User Authentication Database
+  # ----------------------------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: hlabs-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-banking_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-banking_secure_password_2024}
+      POSTGRES_DB: ${POSTGRES_DB:-banking_system}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - banking-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-banking_user} -d ${POSTGRES_DB:-banking_system}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ----------------------------------------------------------------------------
+  # TigerBeetle - Financial Transactions Database
+  # ----------------------------------------------------------------------------
+  tigerbeetle:
+    image: ghcr.io/tigerbeetle/tigerbeetle:latest
+    container_name: hlabs-tigerbeetle
+    restart: unless-stopped
+    command: start --addresses=0.0.0.0:3000 --cache-grid=256MB /data/cluster_0_replica_0.tigerbeetle
+    ports:
+      - "3000:3000"
+    volumes:
+      - tigerbeetle-data:/data
+    networks:
+      - banking-network
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 3000 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    # Initialize TigerBeetle data file on first run
+    entrypoint: >
+      sh -c "
+      if [ ! -f /data/cluster_0_replica_0.tigerbeetle ]; then
+        echo 'Initializing TigerBeetle data file...';
+        tigerbeetle format --cluster=0 --replica=0 /data/cluster_0_replica_0.tigerbeetle;
+      fi;
+      tigerbeetle start --addresses=0.0.0.0:3000 --cache-grid=256MB /data/cluster_0_replica_0.tigerbeetle
+      "
+
+  # ----------------------------------------------------------------------------
+  # Backend - Go API Server
+  # ----------------------------------------------------------------------------
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: hlabs-backend
+    restart: unless-stopped
+    env_file:
+      - .env.docker
+    environment:
+      # Override with Docker-specific hosts
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DSN: postgresql://${POSTGRES_USER:-banking_user}:${POSTGRES_PASSWORD:-banking_secure_password_2024}@postgres:5432/${POSTGRES_DB:-banking_system}?sslmode=disable
+      TIGERBEETLE_HOST: tigerbeetle
+      TIGERBEETLE_PORT: 3000
+      SERVER_PORT: 8080
+      GIN_MODE: ${GIN_MODE:-release}
+    ports:
+      - "8080:8080"
+    volumes:
+      # Mount test data file for seeding
+      - ./datos-prueba-HNL.json:/app/datos-prueba-HNL.json:ro
+    networks:
+      - banking-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      tigerbeetle:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # ----------------------------------------------------------------------------
+  # Frontend - React Application
+  # ----------------------------------------------------------------------------
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_BASE_URL=${VITE_API_BASE_URL:-http://localhost:8080/api}
+    container_name: hlabs-frontend
+    restart: unless-stopped
+    ports:
+      - "5173:5173"
+    networks:
+      - banking-network
+    depends_on:
+      - backend
+    environment:
+      - VITE_API_BASE_URL=http://localhost:8080/api
+
+# ==============================================================================
+# Volumes
+# ==============================================================================
+volumes:
+  postgres-data:
+    driver: local
+    name: hlabs-postgres-data
+  tigerbeetle-data:
+    driver: local
+    name: hlabs-tigerbeetle-data
+
+# ==============================================================================
+# Networks
+# ==============================================================================
+networks:
+  banking-network:
+    driver: bridge
+    name: hlabs-network

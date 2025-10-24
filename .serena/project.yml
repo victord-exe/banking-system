@@ -1,0 +1,3 @@
+project_name: HLABS
+language: go
+description: Online banking system with TigerBeetle and AI chat integration
