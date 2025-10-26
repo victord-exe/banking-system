@@ -52,4 +52,9 @@ export const transactionAPI = {
   getHistory: (page = 1, limit = 10) => api.get(`/transactions/history?page=${page}&limit=${limit}`),
 };
 
+// Chat endpoints
+export const chatAPI = {
+  sendMessage: (message) => api.post('/chat', { message }),
+};
+
 export default api;

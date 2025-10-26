@@ -1,25 +1,131 @@
+import { useState, useEffect } from 'react';
+import { HiRefresh, HiDocumentText } from 'react-icons/hi';
+import { transactionAPI } from '../services/api';
+import TransactionList from '../components/TransactionList';
+import Pagination from '../components/Pagination';
+import Alert from '../components/Alert';
+
 const History = () => {
+  const [transactions, setTransactions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [totalTransactions, setTotalTransactions] = useState(0);
+
+  const totalPages = Math.ceil(totalTransactions / itemsPerPage);
+
+  const fetchTransactions = async (page = currentPage, limit = itemsPerPage) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await transactionAPI.getHistory(page, limit);
+
+      // Handle different API response formats
+      if (response.data.transactions) {
+        setTransactions(response.data.transactions);
+        setTotalTransactions(response.data.total || response.data.transactions.length);
+      } else if (Array.isArray(response.data)) {
+        setTransactions(response.data);
+        setTotalTransactions(response.data.length);
+      } else {
+        setTransactions([]);
+        setTotalTransactions(0);
+      }
+    } catch (err) {
+      console.error('Error fetching transactions:', err);
+      setError(err.response?.data?.error || 'Failed to load transaction history');
+      setTransactions([]);
+      setTotalTransactions(0);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchTransactions(currentPage, itemsPerPage);
+  }, [currentPage, itemsPerPage]);
+
+  const handlePageChange = (newPage) => {
+    setCurrentPage(newPage);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleItemsPerPageChange = (newItemsPerPage) => {
+    setItemsPerPage(newItemsPerPage);
+    setCurrentPage(1); // Reset to first page when changing items per page
+  };
+
+  const handleRefresh = () => {
+    fetchTransactions(currentPage, itemsPerPage);
+  };
+
   return (
     <div className="page-container">
       <div className="page-header">
-        <h1>Transaction History</h1>
-        <p>View all your past transactions</p>
-      </div>
-
-      <div className="card">
-        <div className="placeholder-content">
-          <h2>🚧 Coming Soon</h2>
-          <p>Transaction history will be implemented in Phase 3</p>
-          <ul>
-            <li>📊 View all transactions</li>
-            <li>🔍 Filter by type</li>
-            <li>📄 Pagination support</li>
-            <li>📅 Date and time details</li>
-          </ul>
+        <div className="page-header-content">
+          <div className="page-title-section">
+            <HiDocumentText size={36} className="page-icon" />
+            <div>
+              <h1>Transaction History</h1>
+              <p>View and track all your past transactions</p>
+            </div>
+          </div>
+          <button
+            className="btn-refresh"
+            onClick={handleRefresh}
+            disabled={loading}
+            aria-label="Refresh transactions"
+          >
+            <HiRefresh size={20} className={loading ? 'spinning' : ''} />
+            <span>Refresh</span>
+          </button>
         </div>
       </div>
-    </div>
-  )
-}
 
-export default History
+      {error && (
+        <Alert
+          type="error"
+          message={error}
+          onClose={() => setError(null)}
+        />
+      )}
+
+      <div className="history-stats">
+        <div className="stat-card">
+          <span className="stat-label">Total Transactions</span>
+          <span className="stat-value">{totalTransactions}</span>
+        </div>
+        <div className="stat-card">
+          <span className="stat-label">Current Page</span>
+          <span className="stat-value">{currentPage} of {totalPages || 1}</span>
+        </div>
+        <div className="stat-card">
+          <span className="stat-label">Showing</span>
+          <span className="stat-value">{itemsPerPage} per page</span>
+        </div>
+      </div>
+
+      <div className="history-content">
+        <TransactionList
+          transactions={transactions}
+          loading={loading}
+        />
+
+        {!loading && transactions.length > 0 && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            itemsPerPage={itemsPerPage}
+            totalItems={totalTransactions}
+            onPageChange={handlePageChange}
+            onItemsPerPageChange={handleItemsPerPageChange}
+          />
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default History;

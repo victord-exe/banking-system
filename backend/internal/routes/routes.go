@@ -5,6 +5,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/hlabs/banking-system/internal/account"
 	"github.com/hlabs/banking-system/internal/auth"
+	"github.com/hlabs/banking-system/internal/chat"
 	"github.com/hlabs/banking-system/internal/middleware"
 	"github.com/hlabs/banking-system/internal/transaction"
 )
@@ -15,6 +16,7 @@ func SetupRoutes(
 	authHandler *auth.Handler,
 	accountHandler *account.Handler,
 	transactionHandler *transaction.Handler,
+	chatHandler *chat.Handler,
 	jwtSecret string,
 ) {
 	// CORS middleware
@@ -68,14 +70,12 @@ func SetupRoutes(
 		}
 
 		// ========================================
-		// Protected routes - AI Chat (Coming soon)
+		// Protected routes - AI Chat
 		// ========================================
 		chatRoutes := api.Group("/chat")
 		chatRoutes.Use(middleware.AuthMiddleware(jwtSecret))
 		{
-			chatRoutes.POST("", func(c *gin.Context) {
-				c.JSON(200, gin.H{"message": "Chat - Coming soon"})
-			})
+			chatRoutes.POST("", chatHandler.ProcessMessage)
 		}
 	}
 }

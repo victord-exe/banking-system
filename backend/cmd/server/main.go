@@ -10,6 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/hlabs/banking-system/internal/account"
 	"github.com/hlabs/banking-system/internal/auth"
+	"github.com/hlabs/banking-system/internal/chat"
 	"github.com/hlabs/banking-system/internal/config"
 	"github.com/hlabs/banking-system/internal/database"
 	"github.com/hlabs/banking-system/internal/routes"
@@ -80,17 +81,19 @@ func main() {
 	// Initialize services
 	accountService := account.NewService(db, tbClient)
 	transactionService := transaction.NewService(db, tbClient)
+	chatService := chat.NewService(accountService, transactionService)
 
 	// Initialize handlers
 	authHandler := auth.NewHandler(db, tbClient, cfg.JWTSecret)
 	accountHandler := account.NewHandler(accountService)
 	transactionHandler := transaction.NewHandler(transactionService)
+	chatHandler := chat.NewHandler(chatService)
 
 	// Setup Gin router
 	router := gin.Default()
 
 	// Setup all routes
-	routes.SetupRoutes(router, authHandler, accountHandler, transactionHandler, cfg.JWTSecret)
+	routes.SetupRoutes(router, authHandler, accountHandler, transactionHandler, chatHandler, cfg.JWTSecret)
 
 	// Graceful shutdown
 	go func() {
