@@ -2,6 +2,31 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## 🚨 CRITICAL RULES - READ FIRST
+
+### Command Execution Policy
+**NEVER run the following commands via Bash tool unless explicitly requested by the user:**
+- ❌ `go mod tidy` / `go mod download` / `go get`
+- ❌ `npm install` / `npm ci` / `yarn install`
+- ❌ `docker-compose up` / `docker-compose down` / `docker build`
+- ❌ `go run` / `npm run` / `npm start` / any server startup commands
+- ❌ Database migration commands
+- ❌ Package installation or dependency management commands
+
+**What you SHOULD do:**
+- ✅ Inform the user which command they need to run
+- ✅ Explain what the command does
+- ✅ Provide the exact command with proper flags
+- ✅ Wait for user to confirm they've run it
+
+**Example:**
+```
+❌ BAD: Running `go mod tidy` to download dependencies...
+✅ GOOD: "Please run `go mod tidy` in the backend directory to download Go dependencies. This command will download all required packages and clean up unused ones."
+```
+
+**Exception:** The user may explicitly ask you to run a command like: "run npm install for me" or "execute go mod tidy". Only then you may use the Bash tool.
+
 ## Project Overview
 
 This is an **online banking system** technical test that requires building a full-stack application with AI chat integration. The system allows users to manage bank accounts, perform transactions (deposits, withdrawals, transfers), and interact with the banking system via natural language using AI.

@@ -1,0 +1,51 @@
+# Git Attributes Configuration for Bankary System
+# Ensures proper line endings for different file types
+
+# Default behavior: use LF for all text files
+* text=auto
+
+# Shell scripts must use LF (Unix line endings) for Docker compatibility
+*.sh text eol=lf
+
+# Docker and configuration files
+Dockerfile text eol=lf
+docker-compose.yml text eol=lf
+.dockerignore text eol=lf
+
+# Go source files
+*.go text eol=lf
+go.mod text eol=lf
+go.sum text eol=lf
+
+# JavaScript/TypeScript files
+*.js text eol=lf
+*.jsx text eol=lf
+*.ts text eol=lf
+*.tsx text eol=lf
+*.json text eol=lf
+
+# Configuration files
+*.yml text eol=lf
+*.yaml text eol=lf
+*.toml text eol=lf
+*.env text eol=lf
+.env.* text eol=lf
+
+# Documentation
+*.md text eol=lf
+
+# Windows-specific files (use CRLF)
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# Binary files
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary

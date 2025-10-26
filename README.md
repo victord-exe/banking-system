@@ -12,6 +12,13 @@ docker-compose up
 
 That's it! The entire system will start automatically with all services configured.
 
+**What happens automatically:**
+- ✅ TigerBeetle initializes its data file on first run
+- ✅ PostgreSQL creates the database and tables
+- ✅ Backend server starts and connects to both databases
+- ✅ Frontend builds and serves the React application
+- ✅ Test users are seeded from `datos-prueba-HNL.json`
+
 **Access the application:**
 - **Frontend**: http://localhost:5173
 - **Backend API**: http://localhost:8080
@@ -232,7 +239,7 @@ docker-compose logs -f
 
 You should see:
 - ✅ PostgreSQL ready
-- ✅ TigerBeetle initialized
+- ✅ TigerBeetle initialized (automatic on first run)
 - ✅ Backend server running on :8080
 - ✅ Frontend running on :5173
 

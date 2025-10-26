@@ -62,3 +62,8 @@ Thumbs.db
 *.temp
 tmp/
 temp/
+nul
+
+# Development tools
+.serena/
+.claude/
