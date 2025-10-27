@@ -17,6 +17,10 @@ type User struct {
 	// TigerBeetle account ID - links to financial account
 	TigerBeetleAccountID uint64 `gorm:"not null;uniqueIndex" json:"tigerbeetle_account_id"`
 
+	// Account number from test data (e.g., "4001-6588-5247-0001")
+	// This is used to link transactions from the JSON test data
+	AccountNumber string `gorm:"index" json:"account_number,omitempty"`
+
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
@@ -33,6 +37,7 @@ type UserDTO struct {
 	Email                string    `json:"email"`
 	FullName             string    `json:"full_name"`
 	TigerBeetleAccountID uint64    `json:"tigerbeetle_account_id"`
+	AccountNumber        string    `json:"account_number,omitempty"`
 	CreatedAt            time.Time `json:"created_at"`
 }
 
@@ -43,6 +48,7 @@ func (u *User) ToDTO() UserDTO {
 		Email:                u.Email,
 		FullName:             u.FullName,
 		TigerBeetleAccountID: u.TigerBeetleAccountID,
+		AccountNumber:        u.AccountNumber,
 		CreatedAt:            u.CreatedAt,
 	}
 }

@@ -1782,12 +1782,12 @@ button:disabled {
 }
 
 .detail-label {
-  color: var(--elegant-slate);
+  color: var(--elegant-silver);
   font-weight: 600;
 }
 
 .detail-value {
-  color: var(--elegant-silver);
+  color: var(--elegant-pearl);
   font-weight: 500;
 }
 

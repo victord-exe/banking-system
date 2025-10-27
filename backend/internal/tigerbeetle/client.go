@@ -124,27 +124,41 @@ func (c *Client) CreateAccount(accountID uint64) error {
 
 // GetBalance retrieves the balance of an account
 func (c *Client) GetBalance(accountID uint64) (int64, error) {
-	id := tb_types.ToUint128(accountID)
+	log.Printf("🟢 [TigerBeetle] GetBalance called for accountID: %d", accountID)
 
+	id := tb_types.ToUint128(accountID)
+	log.Printf("🟢 [TigerBeetle] Converted to Uint128: %v", id)
+
+	log.Printf("🟢 [TigerBeetle] Calling LookupAccounts...")
 	accounts, err := c.client.LookupAccounts([]tb_types.Uint128{id})
 	if err != nil {
+		log.Printf("❌ [TigerBeetle] Failed to lookup account %d: %v", accountID, err)
 		return 0, fmt.Errorf("failed to lookup account: %w", err)
 	}
+	log.Printf("🟢 [TigerBeetle] LookupAccounts returned %d account(s)", len(accounts))
 
 	if len(accounts) == 0 {
+		log.Printf("❌ [TigerBeetle] Account %d not found in TigerBeetle", accountID)
 		return 0, fmt.Errorf("account not found")
 	}
 
 	account := accounts[0]
+	log.Printf("🟢 [TigerBeetle] Account details: ID=%v, Ledger=%d, Code=%d", account.ID, account.Ledger, account.Code)
+	log.Printf("🟢 [TigerBeetle] Account raw values: CreditsPosted=%v, DebitsPosted=%v", account.CreditsPosted, account.DebitsPosted)
 
 	// Balance = Credits - Debits (for accounts with DebitsMustNotExceedCredits flag)
 	// Convert Uint128 to big.Int for arithmetic
 	creditsBI := account.CreditsPosted.BigInt()
 	debitsBI := account.DebitsPosted.BigInt()
+	log.Printf("🟢 [TigerBeetle] Credits as BigInt: %s", creditsBI.String())
+	log.Printf("🟢 [TigerBeetle] Debits as BigInt: %s", debitsBI.String())
+
 	balanceBI := new(big.Int).Sub(&creditsBI, &debitsBI)
+	log.Printf("🟢 [TigerBeetle] Balance as BigInt: %s", balanceBI.String())
 
 	// Convert to int64 (safe for reasonable banking amounts)
 	balance := balanceBI.Int64()
+	log.Printf("✅ [TigerBeetle] Final balance: %d cents (accountID: %d)", balance, accountID)
 
 	return balance, nil
 }

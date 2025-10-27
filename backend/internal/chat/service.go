@@ -1,6 +1,7 @@
 package chat
 
 import (
+	"context"
 	"fmt"
 	"log"
 
@@ -12,60 +13,141 @@ import (
 type Service struct {
 	accountService     *account.Service
 	transactionService *transaction.Service
+	mcpServer          *MCPServer
+	aiClient           *AIClient
 }
 
-// NewService creates a new chat service
+// NewService creates a new chat service with MCP integration
 func NewService(accountService *account.Service, transactionService *transaction.Service) *Service {
+	// Initialize MCP Server with banking tools
+	mcpServer := NewMCPServer(accountService, transactionService)
+	log.Println("✅ MCP Server initialized with 5 banking tools")
+
+	// Initialize AI Client (loads from environment variables)
+	aiClient, err := NewAIClient(mcpServer)
+	if err != nil {
+		log.Printf("⚠️  Warning: Failed to initialize AI Client: %v", err)
+		log.Println("   Chat feature will be degraded. Check OPENROUTER_API_KEY environment variable.")
+		// Continue with nil aiClient - service will handle gracefully
+	} else {
+		model, baseURL := aiClient.GetModelInfo()
+		log.Printf("✅ AI Client initialized (Model: %s, URL: %s)", model, baseURL)
+	}
+
 	return &Service{
 		accountService:     accountService,
 		transactionService: transactionService,
+		mcpServer:          mcpServer,
+		aiClient:           aiClient,
 	}
 }
 
-// ProcessMessage processes a user's chat message and returns an appropriate response
+// ProcessMessage processes a user's chat message using AI and MCP tools
 func (s *Service) ProcessMessage(userID, message string) (ChatResponse, error) {
 	// Log chat interaction for audit
 	log.Printf("💬 Chat: User %s: %s", userID, message)
 
-	// Parse intent from message
-	parsed := ParseIntent(message)
-
-	// Validate intent has required parameters
-	if err := ValidateIntent(parsed); err != nil {
-		return s.buildUnknownResponse(err.Error()), nil
+	// Check if AI client is available
+	if s.aiClient == nil {
+		log.Printf("⚠️  AI Client not available, falling back to error response")
+		return ChatResponse{
+			Reply:                "AI chat service is currently unavailable. Please contact support.",
+			Intent:               IntentUnknown,
+			RequiresConfirmation: false,
+		}, nil
 	}
 
-	// Execute intent
-	var response ChatResponse
-	var err error
-
-	switch parsed.Intent {
-	case IntentBalance:
-		response, err = s.handleBalanceIntent(userID)
-
-	case IntentDeposit:
-		response = s.handleDepositIntent(parsed.Amount)
-
-	case IntentWithdraw:
-		response = s.handleWithdrawIntent(parsed.Amount)
-
-	case IntentTransfer:
-		response = s.handleTransferIntent(parsed.Amount, parsed.ToAccountID)
-
-	case IntentHistory:
-		response, err = s.handleHistoryIntent(userID, parsed.Limit)
-
-	default:
-		response = s.buildUnknownResponse("")
-	}
-
+	// Process message through AI client
+	ctx := context.Background()
+	result, err := s.aiClient.ProcessMessage(ctx, userID, message)
 	if err != nil {
-		return ChatResponse{}, err
+		log.Printf("❌ Error processing message with AI: %v", err)
+		return ChatResponse{}, fmt.Errorf("failed to process message: %w", err)
 	}
 
-	log.Printf("💬 Chat: Response - Intent: %s, Confirmation: %v", response.Intent, response.RequiresConfirmation)
+	// Log what we received from AI client
+	log.Printf("📥 SERVICE: Received ProcessResult from AI Client:")
+	log.Printf("   Reply: %s", result.Reply)
+	log.Printf("   RequiresConfirmation: %v", result.RequiresConfirmation)
+	log.Printf("   ToolName: %s", result.ToolName)
+	log.Printf("   Data: %+v", result.Data)
+
+	// Build response with the AI's reply and confirmation metadata
+	response := ChatResponse{
+		Reply:                result.Reply,
+		Intent:               IntentUnknown, // AI handles intent internally
+		RequiresConfirmation: result.RequiresConfirmation,
+		Data:                 result.Data, // Pass structured data from tools (balance, transactions, etc.)
+	}
+
+	// If confirmation is required, include the confirmation data
+	if result.RequiresConfirmation {
+		response.ConfirmationData = &ConfirmationData{
+			ToolName:  result.ToolName,
+			Arguments: result.Arguments,
+		}
+		log.Printf("💬 Chat: Confirmation required for %s", result.ToolName)
+	} else {
+		log.Printf("💬 Chat: AI Response delivered successfully")
+	}
+
 	return response, nil
 }
+
+// ProcessConfirmation processes a user's confirmation for a critical operation
+func (s *Service) ProcessConfirmation(userID, toolName string, args map[string]interface{}, confirmed bool) (ChatResponse, error) {
+	// Log confirmation interaction for audit
+	log.Printf("💬 Confirmation: User %s - Tool: %s, Confirmed: %v", userID, toolName, confirmed)
+
+	// Check if MCP server is available
+	if s.mcpServer == nil {
+		log.Printf("❌ MCP Server not available")
+		return ChatResponse{}, fmt.Errorf("MCP server not initialized")
+	}
+
+	// If user declined, return appropriate message
+	if !confirmed {
+		return ChatResponse{
+			Reply:                "Operation cancelled.",
+			Intent:               IntentUnknown,
+			RequiresConfirmation: false,
+		}, nil
+	}
+
+	// Execute the tool with confirmation
+	ctx := context.Background()
+	result, err := s.mcpServer.ExecuteTool(ctx, toolName, userID, args, true)
+	if err != nil {
+		log.Printf("❌ Error executing confirmed tool %s: %v", toolName, err)
+		return ChatResponse{}, fmt.Errorf("failed to execute operation: %w", err)
+	}
+
+	// Check if tool execution was successful
+	if !result.Success {
+		return ChatResponse{
+			Reply:                fmt.Sprintf("Operation failed: %s", result.Message),
+			Intent:               IntentUnknown,
+			RequiresConfirmation: false,
+		}, nil
+	}
+
+	// Return success response
+	response := ChatResponse{
+		Reply:                result.Message,
+		Intent:               IntentUnknown,
+		Data:                 result.Data,
+		RequiresConfirmation: false,
+	}
+
+	log.Printf("💬 Confirmation: Operation %s completed successfully", toolName)
+	return response, nil
+}
+
+// ============================================================================
+// Legacy Helper Methods (DEPRECATED - kept for reference)
+// These methods are no longer used with MCP integration but kept for
+// backward compatibility and reference purposes.
+// ============================================================================
 
 // handleBalanceIntent handles balance queries
 func (s *Service) handleBalanceIntent(userID string) (ChatResponse, error) {

@@ -194,10 +194,30 @@ func (h *Handler) GetHistory(c *gin.Context) {
 		return
 	}
 
+	// Get total count for pagination metadata
+	totalCount, err := h.service.GetHistoryCount(userID)
+	if err != nil {
+		log.Printf("Failed to get history count for user %s: %v", userID, err)
+		// Continue with empty count rather than failing the request
+		totalCount = 0
+	}
+
+	// Calculate pagination metadata
+	totalPages := int((totalCount + int64(limit) - 1) / int64(limit))
+	if totalPages < 0 {
+		totalPages = 0
+	}
+
 	response := gin.H{
 		"transactions": history,
-		"page":         page,
-		"limit":        limit,
+		"pagination": gin.H{
+			"page":        page,
+			"limit":       limit,
+			"total":       totalCount,
+			"total_pages": totalPages,
+			"has_next":    page < totalPages,
+			"has_prev":    page > 1,
+		},
 	}
 
 	utils.RespondWithSuccess(c, http.StatusOK, response, "Transaction history retrieved successfully")

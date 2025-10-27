@@ -5,6 +5,7 @@ import Message from './Message';
 const ChatInterface = ({
   messages,
   onSendMessage,
+  onAction,
   loading,
   onClear,
   showQuickActions = true
@@ -95,7 +96,7 @@ const ChatInterface = ({
         ) : (
           <>
             {messages.map((message) => (
-              <Message key={message.id} message={message} />
+              <Message key={message.id} message={message} onAction={onAction} />
             ))}
 
             {/* Typing Indicator */}
@@ -157,7 +158,7 @@ const ChatInterface = ({
             onKeyDown={handleKeyDown}
             disabled={loading}
             rows={1}
-            maxLength={1000}
+            maxLength={2000}
           />
           <button
             type="submit"

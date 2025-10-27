@@ -1,5 +1,5 @@
 import {
-  formatRelativeTime,
+  formatDetailedTimestamp,
   formatTransactionAmount,
   getTransactionIcon,
   getTransactionColor,
@@ -12,6 +12,22 @@ const TransactionItem = ({ transaction }) => {
   const color = getTransactionColor(transaction.type);
   const badgeStyle = getTransactionBadgeStyle(transaction.type);
   const amountColor = transaction.type.toLowerCase() === 'deposit' ? '#10B981' : '#EF4444';
+
+  // Determine recipient display based on transaction type
+  const getRecipientDisplay = () => {
+    if (transaction.type.toLowerCase() === 'transfer') {
+      if (transaction.recipient_name || transaction.recipient_email) {
+        const name = transaction.recipient_name || 'Unknown User';
+        const email = transaction.recipient_email;
+        return email ? `${name} (${email})` : name;
+      }
+      // Fallback to account ID if no user info
+      return `Account ${transaction.credit_account_id}`;
+    }
+    return null;
+  };
+
+  const recipientDisplay = getRecipientDisplay();
 
   return (
     <div className="transaction-item">
@@ -36,25 +52,29 @@ const TransactionItem = ({ transaction }) => {
         </div>
 
         <div className="transaction-item-details">
+          {/* Timestamp with both relative and absolute time */}
           <div className="transaction-detail">
             <span className="detail-label">Time:</span>
-            <span className="detail-value">{formatRelativeTime(transaction.created_at)}</span>
+            <span className="detail-value">{formatDetailedTimestamp(transaction.created_at)}</span>
           </div>
 
-          {transaction.from_account_id && (
-            <div className="transaction-detail">
-              <span className="detail-label">From:</span>
-              <span className="detail-value mono">{transaction.from_account_id}</span>
-            </div>
-          )}
-
-          {transaction.to_account_id && (
+          {/* Show recipient for transfers */}
+          {recipientDisplay && (
             <div className="transaction-detail">
               <span className="detail-label">To:</span>
-              <span className="detail-value mono">{transaction.to_account_id}</span>
+              <span className="detail-value">{recipientDisplay}</span>
             </div>
           )}
 
+          {/* Show description if available */}
+          {transaction.description && (
+            <div className="transaction-detail">
+              <span className="detail-label">Note:</span>
+              <span className="detail-value">{transaction.description}</span>
+            </div>
+          )}
+
+          {/* Status indicator */}
           {transaction.status && (
             <div className="transaction-detail">
               <span className="detail-label">Status:</span>

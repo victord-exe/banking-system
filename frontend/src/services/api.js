@@ -46,15 +46,26 @@ export const accountAPI = {
 
 // Transaction endpoints
 export const transactionAPI = {
-  deposit: (amount) => api.post('/transactions/deposit', { amount }),
-  withdraw: (amount) => api.post('/transactions/withdraw', { amount }),
-  transfer: (toAccountId, amount) => api.post('/transactions/transfer', { to_account_id: toAccountId, amount }),
+  // Convert dollar amounts to cents before sending to backend
+  // Backend expects all amounts in cents (integer)
+  deposit: (amount) => api.post('/transactions/deposit', { amount: Math.round(amount * 100) }),
+  withdraw: (amount) => api.post('/transactions/withdraw', { amount: Math.round(amount * 100) }),
+  transfer: (toAccountId, amount) => api.post('/transactions/transfer', {
+    to_account_id: parseInt(toAccountId, 10), // Convert string to number
+    amount: Math.round(amount * 100)
+  }),
   getHistory: (page = 1, limit = 10) => api.get(`/transactions/history?page=${page}&limit=${limit}`),
 };
 
 // Chat endpoints
 export const chatAPI = {
   sendMessage: (message) => api.post('/chat', { message }),
+  confirmOperation: (toolName, args, confirmed) =>
+    api.post('/chat/confirm', {
+      tool_name: toolName,
+      arguments: args,
+      confirmed: confirmed
+    }),
 };
 
 export default api;

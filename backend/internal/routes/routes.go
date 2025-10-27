@@ -76,6 +76,7 @@ func SetupRoutes(
 		chatRoutes.Use(middleware.AuthMiddleware(jwtSecret))
 		{
 			chatRoutes.POST("", chatHandler.ProcessMessage)
+			chatRoutes.POST("/confirm", chatHandler.ProcessConfirmation)
 		}
 	}
 }

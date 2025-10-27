@@ -22,14 +22,14 @@ const History = () => {
     try {
       const response = await transactionAPI.getHistory(page, limit);
 
-      // Handle different API response formats
-      if (response.data.transactions) {
-        setTransactions(response.data.transactions);
-        setTotalTransactions(response.data.total || response.data.transactions.length);
-      } else if (Array.isArray(response.data)) {
-        setTransactions(response.data);
-        setTotalTransactions(response.data.length);
+      // Backend wraps response in a "data" object
+      const responseData = response.data.data;
+
+      if (responseData && responseData.transactions) {
+        setTransactions(responseData.transactions);
+        setTotalTransactions(responseData.pagination?.total || responseData.transactions.length);
       } else {
+        console.warn('Unexpected API response format:', response.data);
         setTransactions([]);
         setTotalTransactions(0);
       }

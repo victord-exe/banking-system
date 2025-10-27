@@ -16,12 +16,14 @@ func Connect(dsn string) (*gorm.DB, error) {
 	// Configure GORM logger
 	gormLogger := logger.Default.LogMode(logger.Info)
 
-	// Connect to database
+	// Connect to database with UTF-8 support
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
 		Logger: gormLogger,
 		NowFunc: func() time.Time {
 			return time.Now().UTC()
 		},
+		// Ensure proper UTF-8 handling
+		PrepareStmt: true,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to database: %w", err)
@@ -43,7 +45,16 @@ func Connect(dsn string) (*gorm.DB, error) {
 		return nil, fmt.Errorf("failed to ping database: %w", err)
 	}
 
-	log.Println("✅ PostgreSQL connection established")
+	// Verify UTF-8 encoding is set correctly
+	var clientEncoding string
+	if err := db.Raw("SHOW client_encoding").Scan(&clientEncoding).Error; err != nil {
+		log.Printf("⚠️  Warning: Could not verify client encoding: %v", err)
+	} else {
+		log.Printf("✅ PostgreSQL connection established (client_encoding=%s)", clientEncoding)
+		if clientEncoding != "UTF8" {
+			log.Printf("⚠️  WARNING: Client encoding is %s, expected UTF8 - special characters may not display correctly", clientEncoding)
+		}
+	}
 
 	return db, nil
 }
@@ -55,6 +66,7 @@ func Migrate(db *gorm.DB) error {
 	// Auto-migrate models
 	if err := db.AutoMigrate(
 		&models.User{},
+		&models.Transaction{},
 	); err != nil {
 		return fmt.Errorf("failed to run migrations: %w", err)
 	}
