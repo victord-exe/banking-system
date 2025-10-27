@@ -57,6 +57,49 @@ export const formatRelativeTime = (date) => {
 };
 
 /**
+ * Format timestamp with both relative and absolute time
+ * @param {string|Date} date - The date to format
+ * @returns {string} Combined format: "3 hours ago • 2:30 PM, Jan 15"
+ */
+export const formatDetailedTimestamp = (date) => {
+  const d = new Date(date);
+  const now = new Date();
+  const diffMs = now - d;
+  const diffSecs = Math.floor(diffMs / 1000);
+  const diffMins = Math.floor(diffSecs / 60);
+  const diffHours = Math.floor(diffMins / 60);
+  const diffDays = Math.floor(diffHours / 24);
+
+  // Get relative time
+  let relativeTime;
+  if (diffSecs < 60) relativeTime = 'Just now';
+  else if (diffMins < 60) relativeTime = `${diffMins} min${diffMins > 1 ? 's' : ''} ago`;
+  else if (diffHours < 24) relativeTime = `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+  else if (diffDays < 7) relativeTime = `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+  else relativeTime = null;
+
+  // Get absolute time (always show time and date)
+  const timeStr = d.toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  });
+
+  const dateStr = d.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: now.getFullYear() !== d.getFullYear() ? 'numeric' : undefined,
+  });
+
+  // Combine both if we have relative time
+  if (relativeTime) {
+    return `${relativeTime} • ${timeStr}, ${dateStr}`;
+  }
+
+  return `${timeStr}, ${dateStr}`;
+};
+
+/**
  * Get icon component for transaction type
  * @param {string} type - Transaction type (deposit, withdraw, transfer)
  * @returns {React.Component} Icon component
@@ -116,12 +159,14 @@ export const getTransactionBadgeStyle = (type) => {
 /**
  * Format transaction amount with sign
  * @param {string} type - Transaction type
- * @param {number} amount - Transaction amount
+ * @param {number} amount - Transaction amount in cents
  * @returns {string} Formatted amount with sign
  */
 export const formatTransactionAmount = (type, amount) => {
   const sign = type.toLowerCase() === 'deposit' ? '+' : '-';
-  return `${sign}${formatCurrency(amount)}`;
+  // Backend sends amount in cents, convert to dollars
+  const amountInDollars = amount / 100;
+  return `${sign}${formatCurrency(amountInDollars)}`;
 };
 
 /**

@@ -2,8 +2,10 @@ import { useState, useEffect } from 'react';
 import ChatInterface from '../components/ChatInterface';
 import Alert from '../components/Alert';
 import { chatAPI } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 const Chat = () => {
+  const { fetchBalance } = useAuth();
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -37,15 +39,40 @@ const Chat = () => {
       // Call API
       const response = await chatAPI.sendMessage(content);
 
+      // DEBUG: Log the complete response
+      console.log('🔍 FRONTEND: Full API response:', response);
+      console.log('🔍 FRONTEND: response.data:', response.data);
+
+      // Extract response data from the new backend structure
+      const responseData = response.data.data;
+      console.log('🔍 FRONTEND: Extracted responseData:', responseData);
+      console.log('🔍 FRONTEND: responseData.reply:', responseData?.reply);
+      console.log('🔍 FRONTEND: responseData.data:', responseData?.data);
+
       // Create AI response message
       const aiMessage = {
         id: Date.now() + 1,
         role: 'assistant',
-        content: response.data.message || response.data.response || 'I received your message.',
+        content: responseData?.reply || 'I received your message.',
         timestamp: new Date(),
-        // If the response includes actions (like confirm transfer), add them
-        actions: response.data.actions || null,
+        // Add confirmation actions if needed
+        actions: responseData?.requires_confirmation
+          ? [
+              {
+                label: 'Confirm',
+                type: 'confirm',
+                toolName: responseData.confirmation_data?.tool_name,
+                arguments: responseData.confirmation_data?.arguments,
+              },
+              {
+                label: 'Cancel',
+                type: 'cancel',
+              },
+            ]
+          : null,
       };
+
+      console.log('🔍 FRONTEND: Created aiMessage:', aiMessage);
 
       setMessages((prev) => [...prev, aiMessage]);
     } catch (err) {
@@ -71,6 +98,70 @@ const Chat = () => {
       );
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleAction = async (action) => {
+    // Handle cancel action
+    if (action.type === 'cancel') {
+      const cancelMessage = {
+        id: Date.now(),
+        role: 'assistant',
+        content: 'Operation cancelled.',
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, cancelMessage]);
+      return;
+    }
+
+    // Handle confirm action
+    if (action.type === 'confirm') {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const response = await chatAPI.confirmOperation(
+          action.toolName,
+          action.arguments,
+          true
+        );
+
+        const responseData = response.data.data;
+        console.log('🟣 [Chat] Operation confirmed successfully:', responseData);
+        const confirmMessage = {
+          id: Date.now(),
+          role: 'assistant',
+          content: responseData?.reply || 'Operation completed.',
+          timestamp: new Date(),
+        };
+        setMessages((prev) => [...prev, confirmMessage]);
+
+        // Update balance after successful operation
+        console.log('🟣 [Chat] Updating balance after operation...');
+        await fetchBalance();
+        console.log('🟣 [Chat] Balance updated after operation');
+      } catch (err) {
+        console.error('Confirmation error:', err);
+
+        const errorMessage = {
+          id: Date.now(),
+          role: 'assistant',
+          content: `I apologize, but I encountered an error: ${
+            err.response?.data?.error ||
+            err.response?.data?.message ||
+            'Unable to complete the operation. Please try again.'
+          }`,
+          timestamp: new Date(),
+        };
+        setMessages((prev) => [...prev, errorMessage]);
+        setError(
+          err.response?.data?.error ||
+          err.response?.data?.message ||
+          'Failed to confirm operation. Please try again.'
+        );
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
@@ -104,6 +195,7 @@ const Chat = () => {
         <ChatInterface
           messages={messages}
           onSendMessage={handleSendMessage}
+          onAction={handleAction}
           loading={loading}
           onClear={handleClear}
           showQuickActions={true}

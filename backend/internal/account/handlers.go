@@ -46,20 +46,26 @@ func (h *Handler) GetAccountInfo(c *gin.Context) {
 // GetBalance returns the current user's account balance
 // GET /api/accounts/balance
 func (h *Handler) GetBalance(c *gin.Context) {
+	log.Printf("🔵 [AccountHandler] GetBalance called")
+
 	// Get user ID from context
 	userID, exists := middleware.GetUserID(c)
 	if !exists {
+		log.Printf("❌ [AccountHandler] User not authenticated")
 		utils.RespondWithError(c, http.StatusUnauthorized, "User not authenticated")
 		return
 	}
+	log.Printf("🔵 [AccountHandler] User ID from context: %s", userID)
 
 	// Get balance from TigerBeetle
+	log.Printf("🔵 [AccountHandler] Calling service.GetBalance for user %s...", userID)
 	balance, err := h.service.GetBalance(userID)
 	if err != nil {
-		log.Printf("Error getting balance for user %s: %v", userID, err)
+		log.Printf("❌ [AccountHandler] Error getting balance for user %s: %v", userID, err)
 		utils.RespondWithError(c, http.StatusInternalServerError, "Failed to retrieve balance")
 		return
 	}
+	log.Printf("✅ [AccountHandler] Balance retrieved: %d cents for user %s", balance, userID)
 
 	// Return balance as cents (TigerBeetle uses integer amounts)
 	// Frontend should divide by 100 to get dollars
@@ -68,5 +74,6 @@ func (h *Handler) GetBalance(c *gin.Context) {
 		"currency": "USD",
 	}
 
+	log.Printf("✅ [AccountHandler] Sending response: %+v", response)
 	utils.RespondWithSuccess(c, http.StatusOK, response, "Balance retrieved successfully")
 }

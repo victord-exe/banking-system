@@ -530,6 +530,92 @@ This project addresses all evaluation requirements:
 
 ---
 
+## 🏛️ Architectural Decisions
+
+### Why Dual Database Architecture?
+
+**Decision**: Use PostgreSQL for user data and TigerBeetle for financial operations.
+
+**Rationale**:
+- **Separation of Concerns**: User authentication and financial transactions have different consistency requirements
+- **TigerBeetle Advantages**: Built specifically for financial transactions with:
+  - Immutable transaction log (audit trail)
+  - ACID guarantees at the database level
+  - Double-entry bookkeeping enforced by design
+  - Protection against overdrafts (debits cannot exceed credits)
+- **PostgreSQL for Users**: Standard relational database well-suited for user management and authentication
+- **Scalability**: Each database can be scaled independently based on load
+
+### Why Go for Backend?
+
+**Decision**: Use Go instead of Rust or COBOL.
+
+**Rationale**:
+- **TigerBeetle SDK**: Official Go client is mature and well-documented
+- **Performance**: Go provides excellent performance for concurrent requests
+- **Development Speed**: Faster development time within the 2-day constraint
+- **Ecosystem**: Rich ecosystem (Gin, GORM, JWT libraries)
+
+### Why Model Context Protocol (MCP)?
+
+**Decision**: Implement AI chat using MCP instead of direct LLM API calls.
+
+**Rationale**:
+- **Standardization**: MCP provides a standardized way to integrate AI tools
+- **Flexibility**: Easy to swap AI providers (Claude, GPT-4, etc.) via OpenRouter
+- **Tool Calling**: Built-in support for structured tool calling (deposit, withdraw, transfer)
+- **Confirmation Flows**: MCP enables proper confirmation workflows for critical operations
+
+### Why Vite + React?
+
+**Decision**: Use Vite with React for the frontend.
+
+**Rationale**:
+- **Fast Development**: Hot Module Replacement (HMR) for instant feedback
+- **Modern Tooling**: Better developer experience than traditional bundlers
+- **React Ecosystem**: Large ecosystem of libraries and components
+- **Performance**: Optimized production builds
+
+### Security Decisions
+
+1. **JWT Tokens**: Stateless authentication for API scalability
+2. **bcrypt Hashing**: Industry-standard password hashing (cost factor: 10)
+3. **UTF-8 Encoding**: Explicit `client_encoding=UTF8` to handle international characters correctly
+4. **Protected Routes**: Middleware-based authentication on all sensitive endpoints
+5. **Input Validation**: Server-side validation for all transaction amounts and account IDs
+
+### Data Flow Design
+
+**Money Representation**:
+- **Backend**: All amounts stored in **cents** (int64) to avoid floating-point errors
+- **Frontend**: Converts to dollars for display, converts back to cents before sending
+- **TigerBeetle**: Uses uint128 for maximum precision
+
+**Example**: $100.50 → 10050 cents → TigerBeetle transfer → 10050 cents → $100.50 display
+
+### Docker Configuration
+
+**Decision**: All services in Docker Compose with automatic initialization.
+
+**Rationale**:
+- **One-Command Setup**: `docker-compose up` starts everything
+- **TigerBeetle Init Script**: Custom script auto-creates data file if missing
+- **Health Checks**: Ensure services start in correct order
+- **Volume Persistence**: Data persists across container restarts
+- **Production-Ready**: Same configuration can be used in staging/production with environment overrides
+
+### Why Automatic Seeding?
+
+**Decision**: Automatically load 7,000+ test users from JSON on first run.
+
+**Rationale**:
+- **Evaluator Experience**: No manual setup required for testing
+- **Realistic Data**: Large dataset tests pagination, search, and performance
+- **Idempotent**: Seeding only runs if database is empty (safe to restart)
+- **Historical Transactions**: Pre-populated transaction history makes the app feel real
+
+---
+
 ## 📄 License
 
 This project is a technical assessment.

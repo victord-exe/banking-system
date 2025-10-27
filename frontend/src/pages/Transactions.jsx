@@ -191,6 +191,45 @@ const Transactions = () => {
           {activeTab === 'deposit' && (
             <TransactionCard title="Deposit Funds" icon={HiCash} color="#10B981">
               <div className="transaction-form">
+                {/* Quick Amount Buttons */}
+                <div className="form-group">
+                  <label className="form-label">Quick Amounts</label>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '0.5rem', marginTop: '0.5rem' }}>
+                    {[10, 50, 100, 500, 1000].map((quickAmount) => (
+                      <button
+                        key={quickAmount}
+                        type="button"
+                        onClick={() => setDepositAmount(quickAmount.toString())}
+                        style={{
+                          padding: '0.5rem',
+                          borderRadius: '6px',
+                          border: depositAmount === quickAmount.toString() ? '2px solid #10B981' : '1px solid rgba(255, 255, 255, 0.2)',
+                          background: depositAmount === quickAmount.toString() ? 'rgba(16, 185, 129, 0.2)' : 'rgba(255, 255, 255, 0.05)',
+                          color: depositAmount === quickAmount.toString() ? '#10B981' : 'rgba(255, 255, 255, 0.8)',
+                          cursor: 'pointer',
+                          fontSize: '0.875rem',
+                          fontWeight: '500',
+                          transition: 'all 0.2s',
+                        }}
+                        onMouseEnter={(e) => {
+                          if (depositAmount !== quickAmount.toString()) {
+                            e.target.style.background = 'rgba(255, 255, 255, 0.1)'
+                            e.target.style.borderColor = 'rgba(255, 255, 255, 0.3)'
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (depositAmount !== quickAmount.toString()) {
+                            e.target.style.background = 'rgba(255, 255, 255, 0.05)'
+                            e.target.style.borderColor = 'rgba(255, 255, 255, 0.2)'
+                          }
+                        }}
+                      >
+                        ${quickAmount}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 <AmountInput
                   label="Amount"
                   value={depositAmount}
@@ -220,7 +259,59 @@ const Transactions = () => {
                 <div className="form-group">
                   <label className="form-label">Current Balance</label>
                   <div className="balance-display">
-                    ${balance.toFixed(2)}
+                    ${balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </div>
+                </div>
+
+                {/* Quick Amount Buttons */}
+                <div className="form-group">
+                  <label className="form-label">Quick Amounts</label>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '0.5rem', marginTop: '0.5rem' }}>
+                    {[10, 50, 100, 500, 1000].map((quickAmount) => {
+                      const isDisabled = quickAmount > balance || quickAmount > 5000;
+                      return (
+                        <button
+                          key={quickAmount}
+                          type="button"
+                          onClick={() => !isDisabled && setWithdrawAmount(quickAmount.toString())}
+                          disabled={isDisabled}
+                          style={{
+                            padding: '0.5rem',
+                            borderRadius: '6px',
+                            border: withdrawAmount === quickAmount.toString() ? '2px solid #F59E0B' : '1px solid rgba(255, 255, 255, 0.2)',
+                            background: withdrawAmount === quickAmount.toString()
+                              ? 'rgba(245, 158, 11, 0.2)'
+                              : isDisabled
+                                ? 'rgba(255, 255, 255, 0.02)'
+                                : 'rgba(255, 255, 255, 0.05)',
+                            color: withdrawAmount === quickAmount.toString()
+                              ? '#F59E0B'
+                              : isDisabled
+                                ? 'rgba(255, 255, 255, 0.3)'
+                                : 'rgba(255, 255, 255, 0.8)',
+                            cursor: isDisabled ? 'not-allowed' : 'pointer',
+                            fontSize: '0.875rem',
+                            fontWeight: '500',
+                            transition: 'all 0.2s',
+                            opacity: isDisabled ? 0.5 : 1,
+                          }}
+                          onMouseEnter={(e) => {
+                            if (!isDisabled && withdrawAmount !== quickAmount.toString()) {
+                              e.target.style.background = 'rgba(255, 255, 255, 0.1)'
+                              e.target.style.borderColor = 'rgba(255, 255, 255, 0.3)'
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (!isDisabled && withdrawAmount !== quickAmount.toString()) {
+                              e.target.style.background = 'rgba(255, 255, 255, 0.05)'
+                              e.target.style.borderColor = 'rgba(255, 255, 255, 0.2)'
+                            }
+                          }}
+                        >
+                          ${quickAmount}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -253,19 +344,81 @@ const Transactions = () => {
                 <div className="form-group">
                   <label className="form-label">Current Balance</label>
                   <div className="balance-display">
-                    ${balance.toFixed(2)}
+                    ${balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </div>
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label">Destination Account ID</label>
+                  <label className="form-label">
+                    Destination Account ID
+                    <span style={{
+                      fontSize: '0.75rem',
+                      color: 'rgba(255, 255, 255, 0.5)',
+                      marginLeft: '0.5rem',
+                      fontWeight: 'normal'
+                    }}>
+                      (TigerBeetle Account ID)
+                    </span>
+                  </label>
                   <input
                     type="text"
                     className="form-input"
                     value={transferAccountId}
                     onChange={(e) => setTransferAccountId(e.target.value)}
-                    placeholder="Enter account ID"
+                    placeholder="Enter TigerBeetle account ID"
                   />
+                </div>
+
+                {/* Quick Amount Buttons */}
+                <div className="form-group">
+                  <label className="form-label">Quick Amounts</label>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '0.5rem', marginTop: '0.5rem' }}>
+                    {[10, 50, 100, 500, 1000].map((quickAmount) => {
+                      const isDisabled = quickAmount > balance || quickAmount > 10000;
+                      return (
+                        <button
+                          key={quickAmount}
+                          type="button"
+                          onClick={() => !isDisabled && setTransferAmount(quickAmount.toString())}
+                          disabled={isDisabled}
+                          style={{
+                            padding: '0.5rem',
+                            borderRadius: '6px',
+                            border: transferAmount === quickAmount.toString() ? '2px solid #3B82F6' : '1px solid rgba(255, 255, 255, 0.2)',
+                            background: transferAmount === quickAmount.toString()
+                              ? 'rgba(59, 130, 246, 0.2)'
+                              : isDisabled
+                                ? 'rgba(255, 255, 255, 0.02)'
+                                : 'rgba(255, 255, 255, 0.05)',
+                            color: transferAmount === quickAmount.toString()
+                              ? '#3B82F6'
+                              : isDisabled
+                                ? 'rgba(255, 255, 255, 0.3)'
+                                : 'rgba(255, 255, 255, 0.8)',
+                            cursor: isDisabled ? 'not-allowed' : 'pointer',
+                            fontSize: '0.875rem',
+                            fontWeight: '500',
+                            transition: 'all 0.2s',
+                            opacity: isDisabled ? 0.5 : 1,
+                          }}
+                          onMouseEnter={(e) => {
+                            if (!isDisabled && transferAmount !== quickAmount.toString()) {
+                              e.target.style.background = 'rgba(255, 255, 255, 0.1)'
+                              e.target.style.borderColor = 'rgba(255, 255, 255, 0.3)'
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (!isDisabled && transferAmount !== quickAmount.toString()) {
+                              e.target.style.background = 'rgba(255, 255, 255, 0.05)'
+                              e.target.style.borderColor = 'rgba(255, 255, 255, 0.2)'
+                            }
+                          }}
+                        >
+                          ${quickAmount}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
 
                 <AmountInput

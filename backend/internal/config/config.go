@@ -59,7 +59,7 @@ func Load() (*Config, error) {
 	cfg.PostgresDSN = getEnv("POSTGRES_DSN", "")
 	if cfg.PostgresDSN == "" {
 		cfg.PostgresDSN = fmt.Sprintf(
-			"host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
+			"host=%s port=%s user=%s password=%s dbname=%s sslmode=disable client_encoding=UTF8",
 			cfg.PostgresHost,
 			cfg.PostgresPort,
 			cfg.PostgresUser,
