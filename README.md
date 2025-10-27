@@ -13,6 +13,7 @@ docker-compose up
 That's it! The entire system will start automatically with all services configured.
 
 **What happens automatically:**
+
 - ✅ TigerBeetle initializes its data file on first run
 - ✅ PostgreSQL creates the database and tables
 - ✅ Backend server starts and connects to both databases
@@ -20,6 +21,7 @@ That's it! The entire system will start automatically with all services configur
 - ✅ Test users are seeded from `datos-prueba-HNL.json`
 
 **Access the application:**
+
 - **Frontend**: http://localhost:5173
 - **Backend API**: http://localhost:8080
 - **API Health**: http://localhost:8080/health
@@ -31,9 +33,10 @@ Users from `datos-prueba-HNL.json` are automatically seeded on first run.
 Password pattern: `{FirstName}2024!`
 
 Example:
+
 ```
-Email: (from datos-prueba-HNL.json)
-Password: Maria2024!  (if name is María López)
+Email: mjimenez@example.com
+Password: Miguel2024!
 ```
 
 ---
@@ -96,12 +99,13 @@ This project is a **technical test** demonstrating a complete online banking sys
 
 ### Dual Database Strategy
 
-| Database | Purpose | Data Stored |
-|----------|---------|-------------|
-| **PostgreSQL** | User authentication | Users, credentials, sessions, profile data |
+| Database              | Purpose              | Data Stored                                        |
+| --------------------- | -------------------- | -------------------------------------------------- |
+| **PostgreSQL**  | User authentication  | Users, credentials, sessions, profile data         |
 | **TigerBeetle** | Financial operations | Accounts, balances, transfers, transaction history |
 
 **Why?** Separating authentication from financial data:
+
 - ✅ Security: Financial data isolated from user credentials
 - ✅ Performance: Each DB optimized for its specific use case
 - ✅ Scalability: Can scale independently
@@ -127,6 +131,7 @@ Transfer $30 (User A → User B):
 ## 🛠️ Tech Stack
 
 ### Backend
+
 - **Go 1.21+** - Systems programming language
 - **Gin** - HTTP web framework
 - **GORM** - ORM for PostgreSQL
@@ -135,6 +140,7 @@ Transfer $30 (User A → User B):
 - **tigerbeetle-go** - TigerBeetle client
 
 ### Frontend
+
 - **Vite** - Build tool and dev server
 - **React 18** - UI framework
 - **React Router** - Client-side routing
@@ -142,14 +148,17 @@ Transfer $30 (User A → User B):
 - **TailwindCSS** - Utility-first CSS
 
 ### Databases
+
 - **PostgreSQL 16** - User authentication and profiles
 - **TigerBeetle** - Financial transactions and accounting
 
 ### AI Integration
+
 - **Model Context Protocol (MCP)** - Standardized AI interface
 - **OpenRouter** - Multi-model AI API access
 
 ### Infrastructure
+
 - **Docker & Docker Compose** - Containerization
 
 ---
@@ -159,31 +168,35 @@ Transfer $30 (User A → User B):
 ### Core Banking Features
 
 #### 1. Authentication & Security
-- [x] User registration with email validation
-- [x] Secure login with JWT tokens
-- [x] Password hashing (bcrypt)
-- [x] Protected API routes
-- [x] Session management
+
+- [X] User registration with email validation
+- [X] Secure login with JWT tokens
+- [X] Password hashing (bcrypt)
+- [X] Protected API routes
+- [X] Session management
 
 #### 2. Account Management
-- [x] Automatic bank account creation (TigerBeetle)
-- [x] Real-time balance display
-- [x] Account overview dashboard
+
+- [X] Automatic bank account creation (TigerBeetle)
+- [X] Real-time balance display
+- [X] Account overview dashboard
 
 #### 3. Financial Operations
-- [x] **Deposits**: Add funds to account
-- [x] **Withdrawals**: Remove funds (with balance validation)
-- [x] **Transfers**: Send money to other users
-- [x] **Transaction History**: Paginated list of all transactions
-- [x] Real-time balance updates
+
+- [X] **Deposits**: Add funds to account
+- [X] **Withdrawals**: Remove funds (with balance validation)
+- [X] **Transfers**: Send money to other users
+- [X] **Transaction History**: Paginated list of all transactions
+- [X] Real-time balance updates
 
 #### 4. AI Chat Interface
-- [x] Natural language banking operations
-- [x] Examples:
+
+- [X] Natural language banking operations
+- [X] Examples:
   - "What's my balance?"
   - "Transfer $100 to account 12345"
   - "Show my last 10 transactions"
-- [x] Confirmation prompts for critical operations
+- [X] Confirmation prompts for critical operations
 
 ---
 
@@ -233,11 +246,13 @@ docker-compose up -d
 4. **Wait for services to start** (~30-60 seconds)
 
 Watch the logs:
+
 ```bash
 docker-compose logs -f
 ```
 
 You should see:
+
 - ✅ PostgreSQL ready
 - ✅ TigerBeetle initialized (automatic on first run)
 - ✅ Backend server running on :8080
@@ -316,6 +331,7 @@ http://localhost:8080/api
 ### Authentication Endpoints (Public)
 
 #### Register
+
 ```http
 POST /api/auth/register
 Content-Type: application/json
@@ -328,6 +344,7 @@ Content-Type: application/json
 ```
 
 **Response:**
+
 ```json
 {
   "token": "eyJhbGciOiJIUzI1NiIs...",
@@ -340,6 +357,7 @@ Content-Type: application/json
 ```
 
 #### Login
+
 ```http
 POST /api/auth/login
 Content-Type: application/json
@@ -355,12 +373,14 @@ Content-Type: application/json
 All require `Authorization: Bearer <token>` header.
 
 #### Get Balance
+
 ```http
 GET /api/accounts/balance
 Authorization: Bearer <token>
 ```
 
 **Response:**
+
 ```json
 {
   "account_id": "12345",
@@ -372,6 +392,7 @@ Authorization: Bearer <token>
 ### Transaction Endpoints (Protected)
 
 #### Deposit
+
 ```http
 POST /api/transactions/deposit
 Authorization: Bearer <token>
@@ -383,6 +404,7 @@ Content-Type: application/json
 ```
 
 #### Withdraw
+
 ```http
 POST /api/transactions/withdraw
 Authorization: Bearer <token>
@@ -394,6 +416,7 @@ Content-Type: application/json
 ```
 
 #### Transfer
+
 ```http
 POST /api/transactions/transfer
 Authorization: Bearer <token>
@@ -406,6 +429,7 @@ Content-Type: application/json
 ```
 
 #### Transaction History
+
 ```http
 GET /api/transactions/history?page=1&limit=10
 Authorization: Bearer <token>
@@ -461,16 +485,16 @@ The project uses `.env.docker` (committed to repository) with safe defaults for 
 
 ### Key Variables
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `POSTGRES_USER` | PostgreSQL username | banking_user |
-| `POSTGRES_PASSWORD` | PostgreSQL password | banking_secure_password_2024 |
-| `POSTGRES_DB` | Database name | banking_system |
-| `TIGERBEETLE_HOST` | TigerBeetle server | tigerbeetle |
-| `TIGERBEETLE_PORT` | TigerBeetle port | 3000 |
-| `JWT_SECRET` | JWT signing key | (auto-generated) |
-| `OPENROUTER_API_KEY` | AI chat API key | (must be added) |
-| `SERVER_PORT` | Backend port | 8080 |
+| Variable               | Description         | Default                      |
+| ---------------------- | ------------------- | ---------------------------- |
+| `POSTGRES_USER`      | PostgreSQL username | banking_user                 |
+| `POSTGRES_PASSWORD`  | PostgreSQL password | banking_secure_password_2024 |
+| `POSTGRES_DB`        | Database name       | banking_system               |
+| `TIGERBEETLE_HOST`   | TigerBeetle server  | tigerbeetle                  |
+| `TIGERBEETLE_PORT`   | TigerBeetle port    | 3000                         |
+| `JWT_SECRET`         | JWT signing key     | (auto-generated)             |
+| `OPENROUTER_API_KEY` | AI chat API key     | (must be added)              |
+| `SERVER_PORT`        | Backend port        | 8080                         |
 
 For production, create a `.env` file and override with real secrets.
 
@@ -503,27 +527,32 @@ Password pattern: `{FirstName}2024!`
 This project addresses all evaluation requirements:
 
 ### ✅ Functionality (40%)
+
 - All banking features working
 - AI chat integration functional
 - No critical bugs
 
 ### ✅ Code Quality (30%)
+
 - Clean, readable code
 - Proper error handling
 - Modular architecture
 
 ### ✅ Security (10%)
+
 - Password hashing (bcrypt)
 - JWT authentication
 - Input validation
 - SQL injection prevention
 
 ### ✅ AI Integration (20%)
+
 - MCP implementation
 - Natural language processing
 - Intent recognition
 
 ### ✅ Documentation (10%)
+
 - Comprehensive README
 - API documentation
 - Code comments
@@ -537,6 +566,7 @@ This project addresses all evaluation requirements:
 **Decision**: Use PostgreSQL for user data and TigerBeetle for financial operations.
 
 **Rationale**:
+
 - **Separation of Concerns**: User authentication and financial transactions have different consistency requirements
 - **TigerBeetle Advantages**: Built specifically for financial transactions with:
   - Immutable transaction log (audit trail)
@@ -551,6 +581,7 @@ This project addresses all evaluation requirements:
 **Decision**: Use Go instead of Rust or COBOL.
 
 **Rationale**:
+
 - **TigerBeetle SDK**: Official Go client is mature and well-documented
 - **Performance**: Go provides excellent performance for concurrent requests
 - **Development Speed**: Faster development time within the 2-day constraint
@@ -561,6 +592,7 @@ This project addresses all evaluation requirements:
 **Decision**: Implement AI chat using MCP instead of direct LLM API calls.
 
 **Rationale**:
+
 - **Standardization**: MCP provides a standardized way to integrate AI tools
 - **Flexibility**: Easy to swap AI providers (Claude, GPT-4, etc.) via OpenRouter
 - **Tool Calling**: Built-in support for structured tool calling (deposit, withdraw, transfer)
@@ -571,6 +603,7 @@ This project addresses all evaluation requirements:
 **Decision**: Use Vite with React for the frontend.
 
 **Rationale**:
+
 - **Fast Development**: Hot Module Replacement (HMR) for instant feedback
 - **Modern Tooling**: Better developer experience than traditional bundlers
 - **React Ecosystem**: Large ecosystem of libraries and components
@@ -587,6 +620,7 @@ This project addresses all evaluation requirements:
 ### Data Flow Design
 
 **Money Representation**:
+
 - **Backend**: All amounts stored in **cents** (int64) to avoid floating-point errors
 - **Frontend**: Converts to dollars for display, converts back to cents before sending
 - **TigerBeetle**: Uses uint128 for maximum precision
@@ -598,6 +632,7 @@ This project addresses all evaluation requirements:
 **Decision**: All services in Docker Compose with automatic initialization.
 
 **Rationale**:
+
 - **One-Command Setup**: `docker-compose up` starts everything
 - **TigerBeetle Init Script**: Custom script auto-creates data file if missing
 - **Health Checks**: Ensure services start in correct order
@@ -609,6 +644,7 @@ This project addresses all evaluation requirements:
 **Decision**: Automatically load 7,000+ test users from JSON on first run.
 
 **Rationale**:
+
 - **Evaluator Experience**: No manual setup required for testing
 - **Realistic Data**: Large dataset tests pagination, search, and performance
 - **Idempotent**: Seeding only runs if database is empty (safe to restart)
